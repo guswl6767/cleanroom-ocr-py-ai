@@ -1,0 +1,35 @@
+# docker-compose.ym
+services:
+  cleanroom-ocr-py-ai:
+    build:
+      context: .              # Dockerfile 이 위치한 프로젝트 루트
+      dockerfile: Dockerfile  # (필요 시 변경)
+    container_name: cleanroom-ocr-py-ai
+
+    # ───── GPU 설정 ─────
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+    # ───── 작업 디렉터리 & 볼륨 ─────
+    volumes:
+      - ${PRJ_DIR_LOC}:${PRJ_DIR_CON}:Z      # 소스 코드
+      - ${DATA_DIR_LOC}:${DATA_DIR_CON}:Z    # 데이터셋
+      - ${MODEL_DIR_LOC}:${MODEL_DIR_CON}:Z  # 체크포인트
+      - ${LOG_DIR_LOC}:${LOG_DIR_CON}:Z      # 로그·결과
+    env_file:
+      - .env.dev.oracle               # (선택) 추가 환경변수
+
+    # ───── 리소스 & 네트워크 ─────
+    shm_size: "100gb"        # 영상/딥러닝 중 shared-memory 부족 방지
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    ports:
+      - "8083:8083"          # 필요 포트 매핑
+    tty: true                # 터미널 유지
+    restart: always
+    privileged: true         # (웹캠 등 디바이스 필요 시)
+
+    # 기본 명령이 Dockerfile CMD["bash"] 이므로 별도 command 생략
